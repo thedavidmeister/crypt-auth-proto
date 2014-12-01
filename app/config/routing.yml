@@ -1,0 +1,4 @@
+foo_random:
+    resource: "@FooRandomBundle/Resources/config/routing.yml"
+    prefix:   /
+

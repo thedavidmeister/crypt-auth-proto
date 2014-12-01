@@ -3,11 +3,18 @@
 namespace Foo\RandomBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Foo\RandomBundle\Utility\Random;
+use FOS\RestBundle\Controller\FOSRestController;
 
-class DefaultController extends Controller
+class DefaultController extends FOSRestController
 {
     public function indexAction($bytes)
     {
-        return $this->render('FooRandomBundle:Default:index.html.twig', array('bytes' => $bytes));
+        $random = Random::urandomBase64($bytes);
+        $view = $this->view()
+          ->setData($random)
+          ->setFormat('json');
+
+        return $this->handleView($view);
     }
 }

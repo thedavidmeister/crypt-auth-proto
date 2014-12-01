@@ -55,7 +55,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      exclude: [
       ".git",
       ".vagrant",
-      "vagrant"
+      "vagrant",
+      "app/cache",
+      "app/logs"
     ],
     args: [
       '-rvlt',

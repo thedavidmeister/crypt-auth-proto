@@ -69,6 +69,12 @@ file {'/foo/app/cache':
   group => 'www-data',
 }
 ->
+file {'/foo/app/cache/dev':
+  ensure => 'directory',
+  owner => 'www-data',
+  group => 'www-data',
+}
+->
 file {'/foo/app/logs':
   ensure => 'directory',
   owner => 'www-data',

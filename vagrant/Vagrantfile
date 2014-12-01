@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.require_version ">= 1.6.5"
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  ##
+  # Configure the VM
+  ##
+
+  # Use apt-get caching if available
+  # http://fgrehm.viewdocs.io/vagrant-cachier
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+  end
+
+  # http://www.vagrantbox.es/
+  config.vm.box_url = "http://puppet-vagrant-boxes.puppetlabs.com/ubuntu-server-12042-x64-vbox4210-nocm.box"
+  config.vm.box = "Puppetlabs Ubuntu 12.04.2 x86_64, VBox 4.2.10, No Puppet or Chef"
+
+  # We want to map the guest's port 80 (http) to some port on the host.
+  # config.vm.network :forwarded_port, host: 4567, guest: 80
+   #Vagrant.configure("2") do |config|
+    # If this causes errors about "failing to create the host-only adapter"
+    # @see https://coderwall.com/p/ydma0q
+    config.vm.network "private_network", ip: "192.168.50.5"
+  # end
+  config.vm.hostname = "vagrant.ld"
+
+  # We want to forward our ssh agent so we can connect to remote servers more
+  # easily from within the box.
+  config.ssh.forward_agent = true
+
+  # This updates /etc/hosts for us. For this to work, we need the hostsupdater
+  # plugin to be installed - https://github.com/cogitatio/vagrant-hostsupdater
+  # $ vagrant plugin install vagrant-hostsupdater
+  config.hostsupdater.aliases = [
+    "vagrant.ld",
+    "www.vagrant.ld"
+  ]
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+  end
+
+end

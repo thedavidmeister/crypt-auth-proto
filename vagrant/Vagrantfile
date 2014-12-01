@@ -5,6 +5,8 @@ Vagrant.require_version ">= 1.6.5"
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+facts = {}
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   ##
@@ -44,6 +46,53 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048
+  end
+
+  # Share the docroot of our project as /shared with the guest VM.
+  config.vm.synced_folder "../", "/shared",
+    type: "rsync",
+    # Exclude Drupal domains managed through provisioning scripts from rsync.
+    exclude: [
+      ".git",
+      ".vagrant",
+      "vagrant"
+    ],
+    args: [
+      '-rvlt',
+      '--delete',
+      '--progress'
+    ],
+    chown: false
+
+  # Get puppet on the box.
+  config.vm.provision :shell, :path => "scripts/puppet.sh"
+
+  # Remove pesky "stdin not a tty" messages.
+  config.vm.provision :shell, :path => "scripts/stdin_not_a_tty.sh"
+
+  # User permissions.
+  config.vm.provision :shell, :path => "scripts/permissions.sh"
+
+  # Run any provisioning scripts that need to happen *before* the default
+  # manifest. This is essentially limited to updating apt-get repositories and
+  # bug fixes.
+  config.vm.provision "puppet" do |puppet|
+    puppet.manifests_path = "manifests"
+    puppet.manifest_file = "pre.pp"
+    puppet.module_path = "modules"
+    puppet.hiera_config_path = "hiera.yaml"
+    puppet.options = "--verbose --debug"
+    puppet.facter = facts
+  end
+
+  # Allow Puppet to do its magic.
+  config.vm.provision "puppet" do |puppet|
+    puppet.manifests_path = "manifests"
+    puppet.manifest_file = "default.pp"
+    puppet.module_path = "modules"
+    puppet.hiera_config_path = "hiera.yaml"
+    puppet.options = "--verbose --debug"
+    puppet.facter = facts
   end
 
 end

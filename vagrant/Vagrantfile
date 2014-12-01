@@ -49,20 +49,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # Share the docroot of our project as /shared with the guest VM.
-  config.vm.synced_folder "../", "/shared"
-    # type: "rsync",
+  config.vm.synced_folder "../", "/foo",
+     type: "rsync",
     # Exclude Drupal domains managed through provisioning scripts from rsync.
-    # exclude: [
-    #  ".git",
-    #  ".vagrant",
-    #  "vagrant"
-    #],
-    #args: [
-    #  '-rvlt',
-    #  '--delete',
-    #  '--progress'
-    #],
-    #chown: false
+     exclude: [
+      ".git",
+      ".vagrant",
+      "vagrant"
+    ],
+    args: [
+      '-rvlt',
+      '--delete',
+      '--progress'
+    ],
+    chown: false
 
   # Get puppet on the box.
   config.vm.provision :shell, :path => "scripts/puppet.sh"

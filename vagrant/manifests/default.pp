@@ -40,7 +40,6 @@ class {'apache':
   # Required for mod PHP.
   mpm_module => 'prefork',
   default_confd_files => true,
-  require => File['/shared'],
 }
 # Add mod PHP.
 include apache::mod::php
@@ -48,25 +47,29 @@ include apache::mod::rewrite
 include apache::mod::ssl
 
 # Create a default vhost for shared files in /shared
-apache::vhost { 'shared':
+apache::vhost { 'vagrant.ld':
   port    => '80',
-  docroot => '/shared/web',
+  docroot => '/foo/web',
   default_vhost => true,
 # Allow .htaccess overrides.
-  directories => [ { path => '/shared/web', allow_override => ['All'] } ],
-}
-
-file {'/shared':
-  ensure => 'directory',
+  directories => [ { path => '/foo/web', allow_override => ['All'] } ],
+  docroot_owner => 'www-data',
+  docroot_group => 'www-data',
 }
 ->
-file {'/shared/app/cache':
+file {'/foo/web':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',
 }
 ->
-file {'/shared/app/logs':
+file {'/foo/app/cache':
+  ensure => 'directory',
+  owner => 'www-data',
+  group => 'www-data',
+}
+->
+file {'/foo/app/logs':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',

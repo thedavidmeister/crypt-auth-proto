@@ -20,7 +20,7 @@ php::module {'apc':
 }
 php::module {'curl': }
 php::module {'imap': }
-php::module {'memcache': }
+# php::module {'memcache': }
 # php::pecl::module { "xhprof":
 #   use_package     => 'false',
 #   preferred_state => 'beta',
@@ -30,9 +30,9 @@ php::module {'memcache': }
 # }
 
 # Configure memcache
-class {'memcached':
-  max_memory => 64,
-}
+# class {'memcached':
+#   max_memory => 64,
+# }
 
 # Configure Apache.
 class {'apache':
@@ -58,4 +58,16 @@ apache::vhost { 'shared':
 
 file {'/shared':
   ensure => 'directory',
+}
+->
+file {'/shared/app/cache':
+  ensure => 'directory',
+  owner => 'www-data',
+  group => 'www-data',
+}
+->
+file {'/shared/app/logs':
+  ensure => 'directory',
+  owner => 'www-data',
+  group => 'www-data',
 }

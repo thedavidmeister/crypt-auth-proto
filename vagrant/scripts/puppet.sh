@@ -21,6 +21,9 @@ fi
 echo "Initial apt-get update..."
 apt-get update >/dev/null
 
+# Resolve apt-get dependencies
+apt-get install -f
+
 # Install wget if we have to (some older Ubuntu versions)
 echo "Installing wget..."
 apt-get install -y wget >/dev/null

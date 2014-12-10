@@ -61,22 +61,26 @@ file {'/foo/web':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',
+  mode => 775,
 }
 ->
 file {'/foo/app/cache':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',
+  mode => 775,
 }
 ->
 file {'/foo/app/cache/dev':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',
+  mode => 775,
 }
 ->
 file {'/foo/app/logs':
   ensure => 'directory',
   owner => 'www-data',
   group => 'www-data',
+  mode => 775,
 }

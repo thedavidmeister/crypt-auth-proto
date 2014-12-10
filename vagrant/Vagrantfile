@@ -5,8 +5,6 @@ Vagrant.require_version ">= 1.6.5"
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-facts = {}
-
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   ##
@@ -20,8 +18,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # http://www.vagrantbox.es/
-  config.vm.box_url = "http://puppet-vagrant-boxes.puppetlabs.com/ubuntu-server-12042-x64-vbox4210-nocm.box"
-  config.vm.box = "Puppetlabs Ubuntu 12.04.2 x86_64, VBox 4.2.10, No Puppet or Chef"
+  config.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box"
+  config.vm.box = "Official Ubuntu 12.04 daily Cloud Image amd64 (VirtualBox 4.1.12)"
 
   # We want to map the guest's port 80 (http) to some port on the host.
   # config.vm.network :forwarded_port, host: 4567, guest: 80
@@ -45,7 +43,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   ]
 
   config.vm.provider "virtualbox" do |v|
-    v.memory = 2048
+    v.memory = 4096
   end
 
   # Share the docroot of our project as /shared with the guest VM.
@@ -75,6 +73,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # User permissions.
   config.vm.provision :shell, :path => "scripts/permissions.sh"
 
+  # FoundationDB
+  config.vm.provision :shell, :path => "scripts/foundationdb.sh"
+
   # Run any provisioning scripts that need to happen *before* the default
   # manifest. This is essentially limited to updating apt-get repositories and
   # bug fixes.
@@ -82,9 +83,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     puppet.manifests_path = "manifests"
     puppet.manifest_file = "pre.pp"
     puppet.module_path = "modules"
-    puppet.hiera_config_path = "hiera.yaml"
+    # puppet.hiera_config_path = "hiera.yaml"
     puppet.options = "--verbose --debug"
-    puppet.facter = facts
+    # puppet.facter = facts
   end
 
   # Allow Puppet to do its magic.
@@ -92,9 +93,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     puppet.manifests_path = "manifests"
     puppet.manifest_file = "default.pp"
     puppet.module_path = "modules"
-    puppet.hiera_config_path = "hiera.yaml"
+    # puppet.hiera_config_path = "hiera.yaml"
     puppet.options = "--verbose --debug"
-    puppet.facter = facts
+    # puppet.facter = facts
   end
 
 end

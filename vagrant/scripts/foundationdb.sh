@@ -16,3 +16,5 @@ wget https://foundationdb.com/downloads/f-ufnxuoixtaxut/I_accept_the_FoundationD
 
 sudo dpkg -i fdb-sql-layer_2.0.2-1_all.deb \
 fdb-sql-layer-client-tools_2.0.2-1_all.deb
+
+apt-get -y install php5-pgsql

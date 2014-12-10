@@ -58,11 +58,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       "app/logs"
     ],
     args: [
-      '-rvlt',
+      '-rvlc',
       '--delete',
       '--progress'
     ],
-    chown: false
+    owner: 'www-data',
+    group: 'www-data',
+    chown: true
 
   # Get puppet on the box.
   config.vm.provision :shell, :path => "scripts/puppet.sh"

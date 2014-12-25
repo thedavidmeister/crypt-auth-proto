@@ -1,7 +1,3 @@
-foo_user:
-    resource: "@FooUserBundle/Resources/config/routing.yml"
-    prefix:   /
-
 foo_random:
     resource: "@FooRandomBundle/Resources/config/routing.yml"
     prefix:   /

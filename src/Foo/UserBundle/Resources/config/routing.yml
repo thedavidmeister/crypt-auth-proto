@@ -1,3 +1,0 @@
-foo_user_homepage:
-    path:     /hello/{name}
-    defaults: { _controller: FooUserBundle:Default:index }

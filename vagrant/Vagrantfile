@@ -49,7 +49,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Share the docroot of our project as /shared with the guest VM.
   config.vm.synced_folder "../", "/foo",
      type: "rsync",
-    # Exclude Drupal domains managed through provisioning scripts from rsync.
      exclude: [
       ".git",
       ".vagrant",

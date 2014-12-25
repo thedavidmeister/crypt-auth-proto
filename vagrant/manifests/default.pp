@@ -20,6 +20,9 @@ php::module {'apc':
 }
 php::module {'curl': }
 php::module {'imap': }
+
+include composer
+
 # php::module {'memcache': }
 # php::pecl::module { "xhprof":
 #   use_package     => 'false',

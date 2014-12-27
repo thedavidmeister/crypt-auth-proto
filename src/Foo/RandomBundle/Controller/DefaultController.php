@@ -10,10 +10,10 @@ class DefaultController extends FOSRestController
 {
     public function indexAction($bytes)
     {
-        $random = $this->get('foo_random.random');
+        $random = $this->get('foo_random.random')->setBytes($bytes);
 
         $view = $this->view()
-          ->setData($random->dec($bytes))
+          ->setData($random->dec())
           ->setFormat('json')
           ->setHeader('Access-Control-Allow-Origin', '*');
 

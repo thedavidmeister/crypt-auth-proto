@@ -1,3 +1,5 @@
 services:
    foo_random.random:
        class: Foo\RandomBundle\Utility\Random
+       arguments: ['@validator']
+       scope: prototype

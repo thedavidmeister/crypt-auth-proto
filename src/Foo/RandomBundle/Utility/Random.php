@@ -16,10 +16,11 @@ class Random
         throw new \Exception($this->path . ' must be readable for random number generation.');
       }
 
-      $this->validator = $validator;
+      if (strlen(decbin(~0)) !== $this->systemBits) {
+        throw new \Exception('Random numbers must be generated on a ' . $this->systemBits . ' bit system');
+      }
 
-      // @see http://stackoverflow.com/questions/2353473/can-php-tell-if-the-server-os-it-64-bit
-      $this->systemBits = strlen(decbin(~0));
+      $this->validator = $validator;
     }
 
     /**
@@ -30,7 +31,40 @@ class Random
      * @var string
      *   The path to the OS provided source of randomness.
      */
-    protected $path = '/dev/urandom';
+    private $path = '/dev/urandom';
+
+    /**
+     * @Assert\EqualTo(
+     *   value = 8,
+     * )
+     *
+     * @var int
+     *   The number of bytes to enforce when generating a random integer. This
+     *   number must equal the number of bits the current system is operating on
+     *   in bytes (divided by 8) so that the data from the OS covers the full
+     *   range of +/- PHP_INT_MAX.
+     *
+     *   For example, a 64 bit system should use 8 bytes of randomly generated
+     *   data for integers. Setting this number too high causes PHP to return
+     *   '0' for most generated integers as the data is outside the range of
+     *   PHP_INT_MAX. Setting this number too low means that some integers will
+     *   never be "picked" by the random number generator. Both situations
+     *   seriously undermine the usefulness of generated numbers.
+     *
+     *   DO NOT CHANGE THIS VALUE WITHOUT A VERY GOOD REASON TO!
+     *
+     * @see $systemBits
+     */
+    private $intBytes = 8;
+
+    /**
+     * @Assert\EqualTo(
+     *   value = 64
+     * )
+     * @var int
+     *   Number of bits that must be supported by the system PHP operates on.
+     */
+    private $systemBits = 64;
 
     /**
      * @Assert\Range(
@@ -44,15 +78,25 @@ class Random
      * @var int
      *   The number of random bytes to produce with generate().
      */
-    protected $bytes;
+    private $bytes;
 
-    protected $decMax;
-
-    protected $systemBits;
-
-    protected function validate()
+    /**
+     * Reads random bytes from /dev/urandom and returns as raw bytes.
+     *
+     * @return string
+     *   A string of random binary data from /dev/urandom.
+     */
+    private function generate()
     {
+      $this->validate();
+      return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
+    }
 
+    /**
+     * Wrapper for Symfony validation.
+     */
+    private function validate()
+    {
       $errors = $this->validator->validate($this);
 
       if (count($errors) > 0) {
@@ -62,73 +106,61 @@ class Random
       }
 
       return $this;
-
     }
 
     /**
      * Get bytes.
+     *
+     * @api
      */
     public function getBytes()
     {
-
       return $this->bytes;
-
     }
 
     /**
      * Set bytes.
+     *
+     * @api
      */
     public function setBytes($bytes)
     {
-
-      $this->bytes = $bytes;
-
+      $this->bytes = (int) $bytes;
       $this->validate();
-
       return $this;
-
     }
 
     /**
-     * Reads random bytes from /dev/urandom and returns as raw bytes or encoded.
+     * Integer from Random::bytes().
      *
-     * @param int $bytes
-     *   The number of bytes to read.
-     *
-     * @return string
-     *   A string of random bytes from /dev/urandom.
-     */
-    public function generate() {
-      return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
-    }
-
-    /**
-     * Decimal encoded Random::bytes().
-     *
+     * @api
      * @see Random::bytes().
      */
     public function integer()
     {
+      if ($this->getBytes() !== $this->intBytes) {
+        throw new \Exception('Bytes must be set to ' . $this->intBytes . ' when generating random integers.');
+      }
+
       // bindec() does not do what we want here, so convert a hex value instead.
-      return hexdec($this->hex());
+      return (int) hexdec($this->hex());
     }
 
     /**
-     * Normalized (0-1) version of Random::bytes().
+     * Normalized (0-1) random float.
      *
+     * @api
      * @see Random::bytes().
      */
     public function normalized()
     {
-      $integer = $this->dec();
-
-      return (float) $integer / $max;
-
+      return abs($this->integer() / PHP_INT_MAX);
     }
 
     /**
      * Hexadecimal encoded Random::bytes().
      *
+     * @api
      * @see Random::bytes().
      */
     public function hex()
@@ -139,6 +171,7 @@ class Random
     /**
      * Base 64 encoded Random::bytes().
      *
+     * @api
      * @see Random::bytes().
      */
     public function base64()

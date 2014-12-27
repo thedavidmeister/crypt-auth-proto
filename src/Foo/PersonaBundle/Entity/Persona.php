@@ -3,6 +3,7 @@
 namespace Foo\PersonaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Persona
@@ -25,6 +26,10 @@ class Persona
      * @var string
      *
      * @ORM\Column(name="email", type="string", length=256)
+     * @Assert\Email(
+     *     message = "The email '{{ value }}' is not a valid email.",
+     *     strict = true
+     * )
      */
     private $email;
 
@@ -32,7 +37,7 @@ class Persona
     /**
      * Get id
      *
-     * @return integer 
+     * @return integer
      */
     public function getId()
     {
@@ -55,7 +60,7 @@ class Persona
     /**
      * Get email
      *
-     * @return string 
+     * @return string
      */
     public function getEmail()
     {

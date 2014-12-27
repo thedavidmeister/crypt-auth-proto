@@ -10,13 +10,27 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Random
 {
 
-    protected $path = '/dev/urandom';
-
-    public function __construct(\Symfony\Component\Validator\ValidatorInterface $validator) {
+    public function __construct(\Symfony\Component\Validator\ValidatorInterface $validator)
+    {
+      if (!is_readable($this->path)) {
+        throw new \Exception($this->path . ' must be readable for random number generation.');
+      }
 
       $this->validator = $validator;
 
+      // @see http://stackoverflow.com/questions/2353473/can-php-tell-if-the-server-os-it-64-bit
+      $this->systemBits = strlen(decbin(~0));
     }
+
+    /**
+     * @Assert\EqualTo(
+     *   value = "/dev/urandom",
+     * )
+     *
+     * @var string
+     *   The path to the OS provided source of randomness.
+     */
+    protected $path = '/dev/urandom';
 
     /**
      * @Assert\Range(
@@ -26,10 +40,18 @@ class Random
      *   maxMessage = "Cannot generate more than {{ limit }} bytes of randomness",
      *   invalidMessage = "The bytes of randomness to generate must be an integer",
      * )
+     *
+     * @var int
+     *   The number of random bytes to produce with generate().
      */
     protected $bytes;
 
-    protected function validate() {
+    protected $decMax;
+
+    protected $systemBits;
+
+    protected function validate()
+    {
 
       $errors = $this->validator->validate($this);
 
@@ -43,18 +65,21 @@ class Random
 
     }
 
-    public function getBytes() {
-
-      $this->validate();
+    /**
+     * Get bytes.
+     */
+    public function getBytes()
+    {
 
       return $this->bytes;
 
     }
 
     /**
-     * Sets the number of bytes of generated randomness for each call.
+     * Set bytes.
      */
-    public function setBytes($bytes) {
+    public function setBytes($bytes)
+    {
 
       $this->bytes = $bytes;
 
@@ -74,9 +99,7 @@ class Random
      *   A string of random bytes from /dev/urandom.
      */
     public function generate() {
-
       return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
-
     }
 
     /**
@@ -84,11 +107,10 @@ class Random
      *
      * @see Random::bytes().
      */
-    public function dec() {
-
+    public function integer()
+    {
       // bindec() does not do what we want here, so convert a hex value instead.
       return hexdec($this->hex());
-
     }
 
     /**
@@ -96,12 +118,8 @@ class Random
      *
      * @see Random::bytes().
      */
-    public function normalized() {
-
-      $max = pow(2, ($bytes * 8));
-      if (is_infinite($max)) {
-        throw new \Exception('Too many bytes for float operations.');
-      }
+    public function normalized()
+    {
       $integer = $this->dec();
 
       return (float) $integer / $max;
@@ -113,10 +131,9 @@ class Random
      *
      * @see Random::bytes().
      */
-    public function hex() {
-
+    public function hex()
+    {
       return bin2hex($this->generate());
-
     }
 
     /**
@@ -124,10 +141,9 @@ class Random
      *
      * @see Random::bytes().
      */
-    public function base64() {
-
+    public function base64()
+    {
       return base64_encode($this->generate());
-
     }
 
 }

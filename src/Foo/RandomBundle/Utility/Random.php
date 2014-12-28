@@ -16,6 +16,9 @@ class Random
         throw new \Exception($this->path . ' must be readable for random number generation.');
       }
 
+      // This works by generating a binary string with all 1's (bitflip 0) and
+      // then counting the number of 1's, which will be equal to the number of
+      // bits used internally by the system.
       if (strlen(decbin(~0)) !== $this->systemBits) {
         throw new \Exception('Random numbers must be generated on a ' . $this->systemBits . ' bit system');
       }
@@ -143,7 +146,13 @@ class Random
       }
 
       // bindec() does not do what we want here, so convert a hex value instead.
-      return (int) hexdec($this->hex());
+      $dec = hexdec($this->hex());
+
+      if (is_infinite($dec)) {
+        throw new \Exception('Generated integers must not exceed the bounds of the system.');
+      }
+
+      return (int) $dec;
     }
 
     /**

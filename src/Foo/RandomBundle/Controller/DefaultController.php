@@ -13,7 +13,7 @@ class DefaultController extends FOSRestController
         $random = $this->get('foo_random.random')->setBytes($bytes);
 
         $view = $this->view()
-          ->setData($random->normalized())
+          ->setData($random->hex())
           ->setFormat('json')
           ->setHeader('Access-Control-Allow-Origin', '*');
 

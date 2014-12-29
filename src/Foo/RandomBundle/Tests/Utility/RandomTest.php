@@ -47,38 +47,18 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   }
 
   /**
-   * Generates an array of $this->rounds random values using $method.
-   *
-   * @param string $method
-   *   The public method of Random to call to generate values.
-   *
-   * @param null|int
-   *   The number of bytes of data to generate per round. If not set, a random
-   *   number of bytes between $minBytes and $maxBytes will be set per round.
+   * Generates an array of $this->rounds random values using generateValue().
    *
    * @return array
    *   An array of length $this->rounds of randomly generated data.
    */
   private function generateData($method, $bytes = null)
   {
-    // We don't need real validation to generate the data so just use a dummy.
-    $random = new Random($this->validatorDummy());
-
-    // Set bytes if appropriate.
-    if (isset($bytes)) {
-      $random->setBytes($bytes);
-    }
-
     // Build $this->rounds of random data.
     $i = 0;
     $data = array();
     while ($i < $this->rounds) {
-      // If $bytes is not set, we generate a random number of bytes every round.
-      if (!isset($bytes)) {
-        $random->setBytes(rand($this->minBytes, $this->maxBytes));
-      }
-
-      $data[] = $random->{$method}();
+      $data[] = $this->generateValue($method, $bytes);
       $i++;
     }
 
@@ -86,9 +66,34 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   }
 
   /**
+   * Generates a single random value.
+   *
+   * @param string $method
+   *   The public method of Random to call to generate values.
+   *
+   * @param null|int
+   *   The number of bytes of data to generate. If not set, a random number of
+   *   bytes between $minBytes and $maxBytes will be set.
+   *
+   * @return mixed
+   *   Random data, as per $method.
+   */
+  private function generateValue($method, $bytes = null)
+  {
+    // We don't need real validation to generate the data so just use a dummy.
+    $random = new Random($this->validatorDummy());
+
+    $bytes = isset($bytes) ? $bytes : rand($this->minBytes, $this->maxBytes);
+
+    $random->setBytes($bytes);
+
+    return $random->{$method}();
+  }
+
+  /**
    * Test that Random::integer() returns valid integers.
    */
-  public function testIntegerReturnsIntegers()
+  public function testInteger()
   {
     // Generate integer data.
     $data = $this->generateData('integer', $this->intBytes);
@@ -108,7 +113,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   /**
    * Test that Random::normalized() produces floats roughly as expected.
    */
-  public function testNormalizedReturnsNormalizedFloats() {
+  public function testNormalized() {
     // Generate normalized data.
     $data = $this->generateData('normalized', $this->intBytes);
 
@@ -121,10 +126,10 @@ class RandomTest extends \PHPUnit_Framework_TestCase
 
     // The average of normalized data should be about 0.5 and we should have
     // roughly the same number of values between 0 - 0.5 and 0.5 - 1.
-    // This is NOT a substitute for statistical tests for "randomness" (we
-    // have to rely on /dev/urandom working as advertised) but we try to raise
-    // red flags if something is seriously wrong with our PHP implementation
-    // leading to obviously skewed data.
+    // This is nowhere near a substitute for statistical tests for "randomness"
+    // (we have to rely on /dev/urandom working as advertised) but we try to
+    // raise red flags if something appears to be seriously wrong with our PHP
+    // wrapper that is leading to obviously skewed data.
     $average = array_reduce($data, function($carry, $item) { return $carry + $item; }, 0) / count($data);
     $delta = abs(0.5 - $average);
     // 5% tolerance on the mean seems about right for 1000 rounds. Feel free to
@@ -133,19 +138,77 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     $tolerance = 0.05;
     $this->assertLessThanOrEqual($tolerance, $delta);
 
+    // Number of values between 0 - 0.5.
     $zero_to_half = array_filter($data, function($item) {
       return $item < 0.5;
     });
 
+    // Number of values between 0.5 - 1.
     $half_to_one = array_filter($data, function($item) {
       return $item > 0.5;
     });
 
-    $delta = abs(count($zero_to_half) - count ($half_to_one));
+    // Difference in size of the two ranges.
+    $delta = abs(count($zero_to_half) - count($half_to_one));
+
     // 100 tolerance seems about right for 1000 rounds, values of 10-70 are
     // common. Feel free to base this on non-empirical, actual math.
     $tolerance = 100;
     $this->assertLessThanOrEqual($tolerance, $delta);
+  }
+
+  /**
+   * Test that Random::hex() produces random hexadecimal encoded bytes.
+   */
+  public function testHexadecimal() {
+    // Generate hex data with random length.
+    $method = 'hex';
+    $data = $this->generateData($method);
+
+    // Hex data should all be PHP strings.
+    $this->assertContainsOnly('string', $data);
+
+    // Check that all generated data represents hex digits.
+    foreach ($data as $datum) {
+      $this->assertTrue(ctype_xdigit($datum));
+    }
+
+    // Check that the correct bytes of data is produced.
+    $i = $this->minBytes;
+    while ($i <= $this->maxBytes) {
+      $value = $this->generateValue($method, $i);
+      $value_bytes = strlen($value) / 2;
+      $this->assertEquals($i, $value_bytes);
+      $i++;
+    }
+  }
+
+  /**
+   * Test that Random::base64() produces random base64 encoded bytes.
+   */
+  public function testBase64() {
+    // Generate base64 data with random length.
+    $method = 'base64';
+    $data = $this->generateData($method);
+
+    // Base64 ata should all be PHP strings.
+    $this->assertContainsOnly('string', $data);
+
+    // Check that all generated strings are valid base64 encodings.
+    foreach ($data as $datum) {
+      // http://stackoverflow.com/questions/4278106/how-to-check-if-a-string-is-base64-valid-in-php
+      $encodable = base64_encode(base64_decode($datum, true)) === $datum;
+      $this->assertTrue($encodable);
+    }
+
+    // Check that the correct bytes of data is produced.
+    $i = $this->minBytes;
+    while ($i <= $this->maxBytes) {
+      $value = $this->generateValue($method, $i);
+      $value_bytes = strlen(base64_decode($value));
+      $this->assertEquals($i, $value_bytes);
+      $i++;
+    }
   }
 
 }

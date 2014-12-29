@@ -3,6 +3,7 @@
 namespace Foo\RandomBundle\Tests\Utility;
 
 use Foo\RandomBundle\Utility\Random;
+use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 
@@ -17,33 +18,42 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    *
    * @var integer
    */
-  private $rounds = 1000;
+  const ROUNDS = 1000;
 
   /**
    * The number of bytes that random integers must be.
    *
    * @var integer
    */
-  private $intBytes = 8;
+  const INT_BYTES = 8;
 
   /**
    * The minimum bytes the rng can produce in generate().
    *
    * @var integer
    */
-  private $minBytes = 1;
+  const MIN_BYTES = 1;
 
   /**
    * The maximum bytes the rng can produce in generate().
    * @var integer
    */
-  private $maxBytes = 1024;
+  const MAX_BYTES = 1024;
 
   /**
    * Returns a mock validator.
    */
-  private function getMockValidator() {
+  private function getMockValidator()
+  {
     return $this->getMockBuilder('\Symfony\Component\Validator\ValidatorInterface')->getMock();
+  }
+
+  /**
+   * Returns the default Symfony validator.
+   */
+  private function getValidator()
+  {
+    return Validation::createValidatorBuilder()->enableAnnotationMapping()->getValidator();
   }
 
   /**
@@ -51,7 +61,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    *
    * @return \Symfony\Component\Validator\ValidatorInterface
    */
-  private function getValidatorDummy() {
+  private function getValidatorDummy()
+  {
     $mock = $this->getMockValidator();
 
     $mock
@@ -66,7 +77,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    *
    * @see \Symfony\Component\Validator\Tests
    */
-  private function getViolatedConstraintViolationList() {
+  private function getViolatedConstraintViolationList()
+  {
     $message = 'some violation';
     $violation = new ConstraintViolation($message, $message, array(), null, null, null);
     return new ConstraintViolationList(array($violation));
@@ -99,7 +111,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     // Build $this->rounds of random data.
     $i = 0;
     $data = array();
-    while ($i < $this->rounds) {
+    while ($i < $this::ROUNDS) {
       $data[] = $this->generateValue($method, $bytes);
       $i++;
     }
@@ -115,7 +127,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    *
    * @param null|int
    *   The number of bytes of data to generate. If not set, a random number of
-   *   bytes between $minBytes and $maxBytes will be set.
+   *   bytes between MIN_BYTES and MAX_BYTES will be set.
    *
    * @return mixed
    *   Random data, as per $method.
@@ -125,7 +137,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     // We don't need real validation to generate the data so just use a dummy.
     $random = new Random($this->getValidatorDummy());
 
-    $bytes = isset($bytes) ? $bytes : rand($this->minBytes, $this->maxBytes);
+    $bytes = isset($bytes) ? $bytes : rand($this::MIN_BYTES, $this::MAX_BYTES);
 
     $random->setBytes($bytes);
 
@@ -138,7 +150,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   public function testInteger()
   {
     // Generate integer data.
-    $data = $this->getData('integer', $this->intBytes);
+    $data = $this->getData('integer', $this::INT_BYTES);
 
     // Integer data should all be native PHP integer type.
     $this->assertContainsOnly('integer', $data);
@@ -157,9 +169,10 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   /**
    * Test that Random::normalized() produces floats roughly as expected.
    */
-  public function testNormalized() {
+  public function testNormalized()
+  {
     // Generate normalized data.
-    $data = $this->getData('normalized', $this->intBytes);
+    $data = $this->getData('normalized', $this::INT_BYTES);
 
     // Normalized data should all be native PHP float type.
     $this->assertContainsOnly('float', $data);
@@ -212,7 +225,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   /**
    * Test that Random::hex() produces random hexadecimal encoded bytes.
    */
-  public function testHexadecimal() {
+  public function testHexadecimal()
+  {
     // Generate hex data with random length.
     $method = 'hex';
     $data = $this->getData($method);
@@ -226,8 +240,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     }
 
     // Check that the correct bytes of data is produced.
-    $i = $this->minBytes;
-    while ($i <= $this->maxBytes) {
+    $i = $this::MIN_BYTES;
+    while ($i <= $this::MAX_BYTES) {
       $value = $this->generateValue($method, $i);
       $value_bytes = strlen($value) / 2;
       $this->assertEquals($i, $value_bytes);
@@ -238,7 +252,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   /**
    * Test that Random::base64() produces random base64 encoded bytes.
    */
-  public function testBase64() {
+  public function testBase64()
+  {
     // Generate base64 data with random length.
     $method = 'base64';
     $data = $this->getData($method);
@@ -254,8 +269,8 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     }
 
     // Check that the correct bytes of data is produced.
-    $i = $this->minBytes;
-    while ($i <= $this->maxBytes) {
+    $i = $this::MIN_BYTES;
+    while ($i <= $this::MAX_BYTES) {
       $value = $this->generateValue($method, $i);
       $value_bytes = strlen(base64_decode($value));
       $this->assertEquals($i, $value_bytes);
@@ -268,8 +283,55 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    *
    * @expectedException Exception
    */
-  public function testValidationException() {
+  public function testValidationException()
+  {
     $random = new Random($this->getValidatorStubFail());
+
+    $random->validate();
+  }
+
+  /**
+   * Tests that generating data with defaults does not trigger exceptions.
+   */
+  public function testValidationDefaults()
+  {
+    $methods = array(
+      'integer',
+      'normalized',
+      'hex',
+      'base64',
+    );
+
+    foreach ($methods as $method) {
+      $random = new Random($this->getValidator());
+      $random->{$method}();
+    }
+  }
+
+  /**
+   * Tests that an exception is thrown when $bytes exceeds upper bounds.
+   *
+   * @expectedException Exception
+   */
+  public function testValidationBytesUpperBounds()
+  {
+    $random = new Random($this->getValidator());
+
+    $random->setBytes($this::MAX_BYTES + 1);
+
+    $random->validate();
+  }
+
+  /**
+   * Tests that an exception is thrown when $bytes exceeds lower bounds.
+   *
+   * @expectedException Exception
+   */
+  public function testValidationBytesLowerBounds()
+  {
+    $random= new Random($this->getValidator());
+
+    $random->setBytes($this::MIN_BYTES - 1);
 
     $random->validate();
   }

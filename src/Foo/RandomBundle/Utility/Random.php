@@ -12,35 +12,30 @@ class Random
 
     public function __construct(\Symfony\Component\Validator\ValidatorInterface $validator)
     {
-      if (!is_readable($this->path)) {
-        throw new \Exception($this->path . ' must be readable for random number generation.');
+      if (!is_readable($this::PATH)) {
+        throw new \Exception($this::PATH . ' must be readable for random number generation.');
       }
 
       // This works by generating a binary string with all 1's (bitflip 0) and
       // then counting the number of 1's, which will be equal to the number of
       // bits used internally by the system.
-      if (strlen(decbin(~0)) !== $this->systemBits) {
-        throw new \Exception('Random numbers must be generated on a ' . $this->systemBits . ' bit system');
+      if (strlen(decbin(~0)) !== $this::SYSTEM_BITS) {
+        throw new \Exception('Random numbers must be generated on a ' . $this::SYSTEM_BITS . ' bit system');
       }
 
       $this->validator = $validator;
+
+      // Set default bytes to INT_BYTES.
+      $this->setBytes($this::INT_BYTES);
     }
 
     /**
-     * @Assert\EqualTo(
-     *   value = "/dev/urandom",
-     * )
-     *
      * @var string
      *   The path to the OS provided source of randomness.
      */
-    private $path = '/dev/urandom';
+    const PATH = '/dev/urandom';
 
     /**
-     * @Assert\EqualTo(
-     *   value = 8,
-     * )
-     *
      * @var int
      *   The number of bytes to enforce when generating a random integer. This
      *   number must equal the number of bits the current system is operating on
@@ -58,16 +53,13 @@ class Random
      *
      * @see $systemBits
      */
-    private $intBytes = 8;
+    const INT_BYTES = 8;
 
     /**
-     * @Assert\EqualTo(
-     *   value = 64
-     * )
      * @var int
      *   Number of bits that must be supported by the system PHP operates on.
      */
-    private $systemBits = 64;
+    const SYSTEM_BITS = 64;
 
     /**
      * @Assert\Range(
@@ -77,6 +69,8 @@ class Random
      *   maxMessage = "Cannot generate more than {{ limit }} bytes of randomness",
      *   invalidMessage = "The bytes of randomness to generate must be an integer",
      * )
+     *
+     * @Assert\NotNull()
      *
      * @var int
      *   The number of random bytes to produce with generate().
@@ -95,7 +89,7 @@ class Random
         $this->validate();
 
         // Read bytes from /dev/urandom.
-        return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
+        return file_get_contents($this::PATH, FALSE, NULL, 0, $this->getBytes());
     }
 
     /**
@@ -144,8 +138,8 @@ class Random
      */
     public function integer()
     {
-      if ($this->getBytes() !== $this->intBytes) {
-        throw new \Exception('Bytes must be set to ' . $this->intBytes . ' when generating random integers.');
+      if ($this->getBytes() !== $this::INT_BYTES) {
+        throw new \Exception('Bytes must be set to ' . $this::INT_BYTES . ' when generating random integers.');
       }
 
       // bindec() does not do what we want here, so convert a hex value instead.

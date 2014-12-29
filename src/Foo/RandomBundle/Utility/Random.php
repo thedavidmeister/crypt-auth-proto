@@ -25,8 +25,8 @@ class Random
 
       $this->validator = $validator;
 
-      // Set default bytes to INT_BYTES.
-      $this->setBytes($this::INT_BYTES);
+      // Set default bytes to DEFAULT_BYTES.
+      $this->setBytes($this::DEFAULT_BYTES);
     }
 
     /**
@@ -54,6 +54,16 @@ class Random
      * @see $systemBits
      */
     const INT_BYTES = 8;
+
+    /**
+     * The default number of bytes to generate if not set.
+     */
+    const DEFAULT_BYTES = 8;
+
+    /**
+     * The default method to use for generation if not set.
+     */
+    const DEFAULT_METHOD = 'normalized';
 
     /**
      * @var int
@@ -128,6 +138,28 @@ class Random
     {
       $this->bytes = (int) $bytes;
       return $this;
+    }
+
+    /**
+     * Get method names for all methods that generate data.
+     */
+    public function getMethods() {
+        return array(
+            'integer',
+            'normalized',
+            'hex',
+            'base64',
+        );
+    }
+
+    /**
+     * Get method names that rely on integers (and thus have extra limitations).
+     */
+    public function getIntMethods() {
+        return array(
+            'integer',
+            'normalized',
+        );
     }
 
     /**

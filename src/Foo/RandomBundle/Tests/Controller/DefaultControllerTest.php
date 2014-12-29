@@ -3,23 +3,48 @@
 namespace Foo\RandomBundle\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 class DefaultControllerTest extends WebTestCase
 {
-    public function testIndex()
+    const INDEX_ROUTE = '/random';
+
+    /**
+     * Parameter combinations that should all cause exceptions.
+     */
+    public function randomInvalidParameterProvider() {
+      return array(
+        // One invalid parameter.
+        array(array('foo' => 'bar')),
+        // Two invalid parameters.
+        array(array('foo' => 'bar', 'baz' => 'bing')),
+        // Mix of valid and invalid parameters.
+        array(array('generator' => 'hex', 'foo' => 'bar')),
+      );
+    }
+
+    /**
+     * Test that invalid parameters throw exceptions.
+     *
+     * @dataProvider randomInvalidParameterProvider
+     */
+    public function testRandomInvalidParameter($parameters)
     {
-        // $client = static::createClient();
+        $client = static::createClient();
 
-        // $i = 1;
-        // $j = 512;
+        $client->request('GET', $this::INDEX_ROUTE, $parameters);
 
-        // while ($i < $j) {
-        //   $crawler = $client->request('GET', '/random/' . $i);
-        //   print $client->getResponse()->getContent() . '|';
-        //   // $this->assertTrue(mb_strlen(json_decode($client->getResponse()->getContent(), TRUE)) === $i);
-        //   $i++;
-        // }
+        $this->assertEquals($client->getResponse()->getStatusCode(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        $this->assertThat(
+          $client->getResponse()->getContent(),
+          $this->stringContains('Unrecognised parameters: ')
+        );
+    }
 
-
+    /**
+     * Test that data returned by each generator is valid JSON data.
+     */
+    public function testRandomValidJSON() {
+      // Test integers.
     }
 }

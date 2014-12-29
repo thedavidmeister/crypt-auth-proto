@@ -291,17 +291,18 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   }
 
   /**
-   * Tests that generating data with defaults does not trigger exceptions.
+   * Basic tests for the default state of Random.
    */
   public function testValidationDefaults()
   {
-    $methods = array(
-      'integer',
-      'normalized',
-      'hex',
-      'base64',
-    );
+    $random = new Random($this->getValidator());
 
+    // Check that the default bytes are set correctly.
+    $this->assertEquals($random::DEFAULT_BYTES, strlen($random->hex()) / 2);
+
+    // Generate one of each set of data using defaults, this should not trigger
+    // exceptions.
+    $methods = $random->getMethods();
     foreach ($methods as $method) {
       $random = new Random($this->getValidator());
       $random->{$method}();

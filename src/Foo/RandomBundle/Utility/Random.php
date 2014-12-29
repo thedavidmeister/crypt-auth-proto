@@ -91,17 +91,21 @@ class Random
      */
     private function generate()
     {
-      $this->validate();
-      return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
+        // Only generate values if validation passes.
+        $this->validate();
+
+        // Read bytes from /dev/urandom.
+        return file_get_contents($this->path, FALSE, NULL, 0, $this->getBytes());
     }
 
     /**
      * Wrapper for Symfony validation.
      */
-    private function validate()
+    public function validate()
     {
       $errors = $this->validator->validate($this);
 
+      // Always throw an exception if validation fails.
       if (count($errors) > 0) {
         foreach ($errors as $error) {
           throw new \Exception($error->getMessage());
@@ -129,7 +133,6 @@ class Random
     public function setBytes($bytes)
     {
       $this->bytes = (int) $bytes;
-      $this->validate();
       return $this;
     }
 

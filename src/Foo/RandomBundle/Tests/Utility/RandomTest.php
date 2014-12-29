@@ -3,6 +3,8 @@
 namespace Foo\RandomBundle\Tests\Utility;
 
 use Foo\RandomBundle\Utility\Random;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
 
 class RandomTest extends \PHPUnit_Framework_TestCase
 {
@@ -38,12 +40,52 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   private $maxBytes = 1024;
 
   /**
-   * Returns a dummy validator object.
+   * Returns a mock validator.
+   */
+  private function getMockValidator() {
+    return $this->getMockBuilder('\Symfony\Component\Validator\ValidatorInterface')->getMock();
+  }
+
+  /**
+   * Returns a dummy validator.
    *
    * @return \Symfony\Component\Validator\ValidatorInterface
    */
-  private function validatorDummy() {
-    return $this->getMockBuilder('\Symfony\Component\Validator\ValidatorInterface')->getMock();
+  private function getValidatorDummy() {
+    $mock = $this->getMockValidator();
+
+    $mock
+      ->expects($this->atLeastOnce())
+      ->method('validate');
+
+    return $mock;
+  }
+
+  /**
+   * Returns a ConstraintViolationList with a single ConstraintViolation.
+   *
+   * @see \Symfony\Component\Validator\Tests
+   */
+  private function getViolatedConstraintViolationList() {
+    $message = 'some violation';
+    $violation = new ConstraintViolation($message, $message, array(), null, null, null);
+    return new ConstraintViolationList(array($violation));
+  }
+
+  /**
+   * Returns a stub validator object that always fails validation.
+   *
+   * @return \Symfony\Component\Validator\ValidatorInterface
+   */
+  private function getValidatorStubFail() {
+    $mock = $this->getMockValidator();
+
+    $mock
+      ->expects($this->atLeastOnce())
+      ->method('validate')
+      ->will($this->returnValue($this->getViolatedConstraintViolationList()));
+
+    return $mock;
   }
 
   /**
@@ -52,7 +94,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    * @return array
    *   An array of length $this->rounds of randomly generated data.
    */
-  private function generateData($method, $bytes = null)
+  private function getData($method, $bytes = null)
   {
     // Build $this->rounds of random data.
     $i = 0;
@@ -81,7 +123,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   private function generateValue($method, $bytes = null)
   {
     // We don't need real validation to generate the data so just use a dummy.
-    $random = new Random($this->validatorDummy());
+    $random = new Random($this->getValidatorDummy());
 
     $bytes = isset($bytes) ? $bytes : rand($this->minBytes, $this->maxBytes);
 
@@ -96,7 +138,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   public function testInteger()
   {
     // Generate integer data.
-    $data = $this->generateData('integer', $this->intBytes);
+    $data = $this->getData('integer', $this->intBytes);
 
     // Integer data should all be native PHP integer type.
     $this->assertContainsOnly('integer', $data);
@@ -117,7 +159,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    */
   public function testNormalized() {
     // Generate normalized data.
-    $data = $this->generateData('normalized', $this->intBytes);
+    $data = $this->getData('normalized', $this->intBytes);
 
     // Normalized data should all be native PHP float type.
     $this->assertContainsOnly('float', $data);
@@ -173,7 +215,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   public function testHexadecimal() {
     // Generate hex data with random length.
     $method = 'hex';
-    $data = $this->generateData($method);
+    $data = $this->getData($method);
 
     // Hex data should all be PHP strings.
     $this->assertContainsOnly('string', $data);
@@ -199,7 +241,7 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   public function testBase64() {
     // Generate base64 data with random length.
     $method = 'base64';
-    $data = $this->generateData($method);
+    $data = $this->getData($method);
 
     // Base64 ata should all be PHP strings.
     $this->assertContainsOnly('string', $data);
@@ -219,6 +261,17 @@ class RandomTest extends \PHPUnit_Framework_TestCase
       $this->assertEquals($i, $value_bytes);
       $i++;
     }
+  }
+
+  /**
+   * Tests that an exception is thrown if validation fails for any reason.
+   *
+   * @expectedException Exception
+   */
+  public function testValidationException() {
+    $random = new Random($this->getValidatorStubFail());
+
+    $random->validate();
   }
 
 }

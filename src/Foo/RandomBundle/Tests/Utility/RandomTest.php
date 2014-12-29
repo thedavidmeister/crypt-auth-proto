@@ -105,4 +105,47 @@ class RandomTest extends \PHPUnit_Framework_TestCase
     $this->assertNotContains(0, $data);
   }
 
+  /**
+   * Test that Random::normalized() produces floats roughly as expected.
+   */
+  public function testNormalizedReturnsNormalizedFloats() {
+    // Generate normalized data.
+    $data = $this->generateData('normalized', $this->intBytes);
+
+    // Normalized data should all be native PHP float type.
+    $this->assertContainsOnly('float', $data);
+
+    // Normalized data should be between 0 and 1.
+    $this->assertLessThanOrEqual(1, max($data));
+    $this->assertGreaterThanOrEqual(0, min($data));
+
+    // The average of normalized data should be about 0.5 and we should have
+    // roughly the same number of values between 0 - 0.5 and 0.5 - 1.
+    // This is NOT a substitute for statistical tests for "randomness" (we
+    // have to rely on /dev/urandom working as advertised) but we try to raise
+    // red flags if something is seriously wrong with our PHP implementation
+    // leading to obviously skewed data.
+    $average = array_reduce($data, function($carry, $item) { return $carry + $item; }, 0) / count($data);
+    $delta = abs(0.5 - $average);
+    // 5% tolerance on the mean seems about right for 1000 rounds. Feel free to
+    // change this if it causes regular issues for testbots or base it on some
+    // non-empirical, actual math.
+    $tolerance = 0.05;
+    $this->assertLessThanOrEqual($tolerance, $delta);
+
+    $zero_to_half = array_filter($data, function($item) {
+      return $item < 0.5;
+    });
+
+    $half_to_one = array_filter($data, function($item) {
+      return $item > 0.5;
+    });
+
+    $delta = abs(count($zero_to_half) - count ($half_to_one));
+    // 100 tolerance seems about right for 1000 rounds, values of 10-70 are
+    // common. Feel free to base this on non-empirical, actual math.
+    $tolerance = 100;
+    $this->assertLessThanOrEqual($tolerance, $delta);
+  }
+
 }

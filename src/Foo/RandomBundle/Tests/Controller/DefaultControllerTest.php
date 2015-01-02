@@ -150,6 +150,8 @@ class DefaultControllerTest extends WebTestCase
         array(array('bytes' => $this::INT_BYTES)),
         // DEFAULT_BYTES only.
         array(array('bytes' => $this::DEFAULT_BYTES)),
+        // Empty.
+        array(array()),
       );
     }
 
@@ -159,10 +161,40 @@ class DefaultControllerTest extends WebTestCase
      * @dataProvider randomValidJSONProvider
      */
     public function testRandomValidJSON($parameters) {
-        // print_r($parameters);
         $client = static::createClient();
         $client->request('GET', $this::INDEX_ROUTE, $parameters);
         $this->assertEquals($client->getResponse()->getStatusCode(), Response::HTTP_OK);
         $this->assertJson($client->getResponse()->getContent());
+    }
+
+    /**
+     * Basic checks that the decoded JSON data is meaningful.
+     *
+     * @see Foo\RandomBundle\Tests\Utility\RandomTest
+     */
+    public function testRandomMeaningfulJSON() {
+      $client = static::createClient();
+
+      // Defaults.
+      $client->request('GET', $this::INDEX_ROUTE, array());
+      $this->assertTrue(is_numeric(json_decode($client->getResponse()->getContent())));
+
+      // Integer.
+      $client->request('GET', $this::INDEX_ROUTE, array('generator' => 'integer'));
+      $this->assertTrue(is_numeric(json_decode($client->getResponse()->getContent())));
+
+      // Normalized.
+      $client->request('GET', $this::INDEX_ROUTE, array('generator' => 'normalized'));
+      $this->assertGreaterThan(0, json_decode($client->getResponse()->getContent()));
+      $this->assertLessThan(1, json_decode($client->getResponse()->getContent()));
+
+      // Hex.
+      $client->request('GET', $this::INDEX_ROUTE, array('generator' => 'hex'));
+      $this->assertTrue(ctype_xdigit(json_decode($client->getResponse()->getContent())));
+
+      // Base64.
+      $client->request('GET', $this::INDEX_ROUTE, array('generator' => 'base64'));
+      $recoded = json_encode(base64_encode(base64_decode(json_decode($client->getResponse()->getContent()), true)));
+      $this->assertTrue($recoded === $client->getResponse()->getContent());
     }
 }

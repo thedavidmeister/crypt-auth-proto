@@ -12,6 +12,7 @@ class Random
 
     public function __construct(\Symfony\Component\Validator\ValidatorInterface $validator)
     {
+      // @todo - write tests for this.
       if (!is_readable($this::PATH)) {
         throw new \Exception($this::PATH . ' must be readable for random number generation.');
       }

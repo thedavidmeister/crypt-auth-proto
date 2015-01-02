@@ -338,6 +338,21 @@ class RandomTest extends \PHPUnit_Framework_TestCase
   }
 
   /**
+   * Tests that setBytes() and getBytes() work.
+   */
+  public function testGetSet() {
+    $random = new Random($this->getValidator());
+
+    // Ensure defaults are gettable.
+    $this->assertEquals($random::DEFAULT_BYTES, $random->getBytes());
+
+    // Set a "random" number of bytes and then check that we can get it.
+    $random_bytes = rand($this::MIN_BYTES, $this::MAX_BYTES);
+    $random->setBytes($random_bytes);
+    $this->assertEquals($random_bytes, $random->getBytes());
+  }
+
+  /**
    * Tests that the getMethods() and getIntMethods() return the correct arrays.
    */
   public function testMethodsArrays() {

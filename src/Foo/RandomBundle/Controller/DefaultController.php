@@ -46,6 +46,7 @@ class DefaultController extends FOSRestController
         $view = $this->view()
           ->setData($random->{$method}())
           ->setFormat('json')
+          // @todo - is this OK??
           ->setHeader('Access-Control-Allow-Origin', '*');
 
         return $this->handleView($view);

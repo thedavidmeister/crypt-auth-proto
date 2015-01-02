@@ -59,6 +59,29 @@ class DefaultControllerTest extends WebTestCase
     }
 
     /**
+     * Parameter combinations that cause exceptions for invalid generators.
+     */
+    public function randomInvalidGeneratorParameterProvider() {
+      return array(
+        // Wrong data type.
+        array(array('generator' => 1)),
+        // Invalid string.
+        array(array('generator' => 'hez')),
+        // Valid bytes, invalid generator.
+        array(array('generator' => 'normalised', 'bytes' => 8)),
+      );
+    }
+
+    /**
+     * Test that invalid generator names throw errors.
+     *
+     * @dataProvider randomInvalidGeneratorParameterProvider
+     */
+    public function testRandomInvalidGeneratorParameter($parameters) {
+      $this->assertThrowsException($parameters, 'Invalid generator type: ');
+    }
+
+    /**
      * Parameter combinations that cause exceptions for integer generators.
      */
     public function randomInvalidIntegerParameterProvider() {

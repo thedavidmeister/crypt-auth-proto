@@ -330,10 +330,35 @@ class RandomTest extends \PHPUnit_Framework_TestCase
    */
   public function testValidationBytesLowerBounds()
   {
-    $random= new Random($this->getValidator());
+    $random = new Random($this->getValidator());
 
     $random->setBytes($this::MIN_BYTES - 1);
 
+    $random->validate();
+  }
+
+  /**
+   * Tests that the getMethods() and getIntMethods() return the correct arrays.
+   */
+  public function testMethodsArrays() {
+    $random = new Random($this->getValidatorDummy());
+
+    $methods = array(
+      'integer',
+      'normalized',
+      'hex',
+      'base64',
+    );
+    $this->assertEquals($methods, $random->getMethods());
+
+    $int_methods = array(
+      'integer',
+      'normalized',
+    );
+    $this->assertEquals($int_methods, $random->getIntMethods());
+
+    // This is a hack because I'm lazy, it just stops the dummy validator from
+    // complaining that we did not call validate() at least once.
     $random->validate();
   }
 
